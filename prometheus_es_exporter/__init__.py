@@ -24,7 +24,7 @@ from .metrics import (group_metrics, gauge_generator,
                       format_metric_name, merge_metric_dicts)
 from .parser import parse_response
 from .scheduler import schedule_job
-from .utils import log_exceptions, nice_shutdown
+from .utils import log_exceptions, nice_shutdown, parse_tags
 
 log = logging.getLogger(__name__)
 
@@ -200,13 +200,19 @@ class QueryMetricCollector(object):
             yield from gauge_generator(metric_dict)
 
 
-def run_query(es_client, query_name, indices, query,
+def run_query(es_client, query_name, indices, tags, query,
               timeout, on_error, on_missing):
 
     try:
         response = es_client.search(index=indices, body=query, request_timeout=timeout)
 
         metrics = parse_response(response, [query_name])
+        if tags:
+            tags_dict = parse_tags(tags)
+            for k,v in tags_dict.items():
+                for m in metrics:
+                    m[2][k] = v
+
         metric_dict = group_metrics(metrics)
 
     except Exception:
@@ -592,22 +598,24 @@ def cli(**options):
                                           fallback=10)
                 indices = config.get(section, 'QueryIndices',
                                      fallback='_all')
+                tags = config.get(section, 'QueryTags',
+                                     fallback='')
                 query = json.loads(config.get(section, 'QueryJson'))
                 on_error = config.getenum(section, 'QueryOnError',
                                           fallback='drop')
                 on_missing = config.getenum(section, 'QueryOnMissing',
                                             fallback='drop')
 
-                queries[query_name] = (interval, timeout, indices, query,
+                queries[query_name] = (interval, timeout, indices, tags, query,
                                        on_error, on_missing)
 
         scheduler = sched.scheduler()
 
         if queries:
-            for query_name, (interval, timeout, indices, query,
+            for query_name, (interval, timeout, indices, tags, query,
                              on_error, on_missing) in queries.items():
                 schedule_job(scheduler, executor, interval,
-                             run_query, es_client, query_name, indices, query,
+                             run_query, es_client, query_name, indices, tags, query,
                              timeout, on_error, on_missing)
         else:
             log.error('No queries found in config file(s)')

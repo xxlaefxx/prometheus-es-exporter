@@ -87,3 +87,16 @@ def nice_shutdown(shutdown_signals=(signal.SIGINT, signal.SIGTERM)):
         return wrapper
 
     return decorator
+
+def parse_tags(tags) -> dict:
+    res = {}
+    l = []
+    if ',' in tags:
+        l = tags.split(',')
+    else:
+        l = [tags]
+    for i in l:
+        if '=' not in i:
+            log.exception('Error while parsing tags, wrong format %(indices)s', {'tags': tags})
+            return
+        res[i.split('=')[0]] = i.split('=')[1]
