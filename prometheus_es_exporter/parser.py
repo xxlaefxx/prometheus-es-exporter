@@ -76,6 +76,9 @@ def parse_agg(agg_key, agg, metric=None, labels=None):
             result.extend(parse_buckets(agg_key, value, metric=metric, labels=labels))
         elif key == 'buckets' and isinstance(value, dict):
             result.extend(parse_buckets_fixed(agg_key, value, metric=metric, labels=labels))
+        elif key == 'from' or key == 'to':
+            # removing these metrics from the result due to the huge amount and no sense
+            pass
         elif key == 'after_key' and 'buckets' in agg:
             # `after_key` is used for paging composite aggregations - don't parse for metrics.
             # https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-composite-aggregation.html#_pagination
