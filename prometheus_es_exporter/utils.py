@@ -100,3 +100,4 @@ def parse_tags(tags) -> dict:
             log.exception('Error while parsing tags, wrong format %(indices)s', {'tags': tags})
             return
         res[i.split('=')[0]] = i.split('=')[1]
+    return res
