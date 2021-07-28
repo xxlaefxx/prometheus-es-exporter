@@ -97,7 +97,7 @@ def parse_tags(tags) -> dict:
         l = [tags]
     for i in l:
         if '=' not in i:
-            log.exception('Error while parsing tags, wrong format %(indices)s', {'tags': tags})
+            log.exception('Error while parsing tags, wrong format %(tags)s', {'tags': tags})
             return
         res[i.split('=')[0]] = i.split('=')[1]
     return res
